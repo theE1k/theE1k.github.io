@@ -1,14 +1,21 @@
 ---
 import { SITE_TITLE } from '../consts';
+import Blob from './Blob.astro';
 import HeaderLink from './HeaderLink.astro';
 ---
 
 <header>
-	<a class="site-title" href="/">{SITE_TITLE}</a>
+	<a class="site-title" href="/">
+		<Blob track width="26" height="26" />
+		{SITE_TITLE}
+	</a>
 	<nav>
-		<HeaderLink href="/blog">blog</HeaderLink>
-		<HeaderLink href="/about">about</HeaderLink>
-		<a href="https://github.com/theE1k" target="_blank" rel="noopener">github</a>
+		<HeaderLink href="/blog">Writing</HeaderLink>
+		<HeaderLink href="/journal">Journal</HeaderLink>
+		<HeaderLink href="/about">About</HeaderLink>
+		<a href="/rss.xml">RSS</a>
+	</nav>
+	<div class="actions">
 		<button id="theme-toggle" type="button" aria-label="Toggle dark mode">
 			<svg class="sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
 				<circle cx="12" cy="12" r="4"></circle>
@@ -18,7 +25,8 @@ import HeaderLink from './HeaderLink.astro';
 				<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
 			</svg>
 		</button>
-	</nav>
+		<a class="btn btn-primary" href="https://github.com/theE1k" target="_blank" rel="noopener">GitHub</a>
+	</div>
 </header>
 <script is:inline>
 	document.getElementById('theme-toggle').addEventListener('click', () => {
@@ -26,51 +34,78 @@ import HeaderLink from './HeaderLink.astro';
 		document.documentElement.dataset.theme = next;
 		localStorage.setItem('theme', next);
 	});
+	// Mascot eyes follow the cursor
+	window.addEventListener('pointermove', (event) => {
+		document.querySelectorAll('[data-blob-track]').forEach((blob) => {
+			const box = blob.getBoundingClientRect();
+			const dx = event.clientX - (box.left + box.width / 2);
+			const dy = event.clientY - (box.top + box.height / 2);
+			const reach = Math.max(1, Math.hypot(dx, dy) / 120);
+			blob.style.setProperty('--ex', Math.max(-6, Math.min(6, dx / 20 / reach)).toFixed(1));
+			blob.style.setProperty('--ey', Math.max(-5, Math.min(5, dy / 20 / reach)).toFixed(1));
+		});
+	});
 </script>
 <style>
 	header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1.5rem 0 1rem;
+		gap: 2.5rem;
+		height: 64px;
 		border-bottom: 1px solid var(--border);
-		font-family: var(--font-mono);
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 	}
 	.site-title {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
 		color: var(--heading);
-		font-weight: 700;
+		font-size: 1rem;
+		font-weight: 500;
+		letter-spacing: -0.01em;
 		text-decoration: none;
 	}
 	nav {
 		display: flex;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 1.75rem;
+		margin-right: auto;
 	}
 	nav a {
-		color: var(--muted);
+		color: var(--heading);
 		text-decoration: none;
+		opacity: 0.75;
+		transition: opacity 0.15s;
 	}
 	nav a:hover,
 	nav a.active {
-		color: var(--heading);
+		opacity: 1;
+	}
+	nav a.active {
+		font-weight: 500;
+	}
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.actions .btn {
+		padding: 0.5rem 1rem;
+		font-size: 0.9rem;
 	}
 	button {
 		display: flex;
-		padding: 0.25rem;
+		padding: 0.6rem;
 		border: none;
-		background: none;
-		color: var(--muted);
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--heading);
 		cursor: pointer;
 	}
-	button:hover {
-		color: var(--heading);
-	}
-	svg {
+	button svg {
 		fill: none;
 		stroke: currentColor;
-		stroke-width: 2;
+		stroke-width: 1.75;
 		stroke-linecap: round;
 		stroke-linejoin: round;
 	}
@@ -80,5 +115,16 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	:global([data-theme='dark']) .moon {
 		display: block;
+	}
+	@media (max-width: 720px) {
+		header {
+			gap: 1.25rem;
+		}
+		nav {
+			gap: 1.1rem;
+		}
+		.actions .btn {
+			display: none;
+		}
 	}
 </style>

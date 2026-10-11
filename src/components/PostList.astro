@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getAllPosts } from '../posts';
 import FormattedDate from './FormattedDate.astro';
 
 interface Props {
@@ -7,19 +7,30 @@ interface Props {
 }
 
 const { limit } = Astro.props;
-const posts = (await getCollection('blog'))
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-	.slice(0, limit);
+const posts = (await getAllPosts()).slice(0, limit);
 ---
 
 <ul>
 	{
 		posts.map((post) => (
 			<li>
-				<span class="mono">
-					<FormattedDate date={post.data.pubDate} />
-				</span>
-				<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+				<a href={`/blog/${post.id}/`}>
+					<span class="text">
+						<span class="title">
+							{post.title}
+							{post.locked && (
+								<svg viewBox="0 0 24 24" width="14" height="14" role="img" aria-label="Password-protected">
+									<rect x="5" y="11" width="14" height="9" rx="2" />
+									<path d="M8 11V8a4 4 0 0 1 8 0v3" />
+								</svg>
+							)}
+						</span>
+						<span class="description">{post.description}</span>
+					</span>
+					<span class="date">
+						<FormattedDate date={post.pubDate} />
+					</span>
+				</a>
 			</li>
 		))
 	}
@@ -31,20 +42,48 @@ const posts = (await getCollection('blog'))
 		padding: 0;
 	}
 	li {
-		display: flex;
-		align-items: baseline;
-		gap: 1.25rem;
-		margin: 0;
-		padding: 0.45rem 0;
-	}
-	.mono {
-		flex-shrink: 0;
+		margin: 0 0 0.6rem;
 	}
 	a {
-		color: var(--heading);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem;
+		padding: 1.15rem 1.5rem;
+		border-radius: 20px;
+		background: var(--surface);
 		text-decoration: none;
+		transition: background 0.15s;
 	}
 	a:hover {
-		color: var(--accent);
+		background: var(--surface-2);
+	}
+	.text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.title svg {
+		margin-left: 0.3rem;
+		fill: none;
+		stroke: var(--muted);
+		stroke-width: 2;
+		stroke-linecap: round;
+	}
+	.title {
+		color: var(--heading);
+		font-size: 1.05rem;
+		font-weight: 500;
+		letter-spacing: -0.01em;
+	}
+	.description {
+		color: var(--muted);
+		font-size: 0.95rem;
+		line-height: 1.5;
+	}
+	.date {
+		flex-shrink: 0;
+		color: var(--muted);
+		font-size: 0.875rem;
 	}
 </style>

@@ -1,0 +1,33 @@
+---
+import { render } from 'astro:content';
+import LockedPost from '../../components/LockedPost.astro';
+import BlogPost from '../../layouts/BlogPost.astro';
+import { getJournal } from '../../posts';
+
+export async function getStaticPaths() {
+	return (await getJournal()).map((item) => ({ params: { slug: item.id }, props: { item } }));
+}
+
+const { item } = Astro.props;
+// Encrypted entries have no readable body to render
+const { Content } = item.cipher ? {} : await render(item.entry);
+---
+
+<BlogPost
+	lang="zh-CN"
+	title={item.title}
+	description={item.description || item.title}
+	pubDate={item.pubDate}
+>
+	{
+		item.status === 'local' && (
+			<p class="muted">
+				{item.entry.data.locked
+					? 'Local copy. On the site this entry is password-protected.'
+					: 'Local only. This entry is not published.'}
+			</p>
+		)
+	}
+	{item.cipher && <LockedPost salt={item.cipher.salt} iv={item.cipher.iv} data={item.cipher.data} />}
+	{Content && <Content />}
+</BlogPost>

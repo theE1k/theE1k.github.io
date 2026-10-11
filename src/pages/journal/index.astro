@@ -1,0 +1,100 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import { getJournal } from '../../posts';
+
+const entries = await getJournal();
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Journal · ${SITE_TITLE}`} description="Personal notes, mostly in Chinese." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Journal</h1>
+			<p class="muted intro">Personal notes, mostly in Chinese.</p>
+			{entries.length === 0 && <p class="muted">Nothing here yet.</p>}
+			<ul>
+				{
+					entries.map((entry) => (
+						<li>
+							<a href={`/journal/${entry.id}/`} lang="zh-CN">
+								<span class="date">
+									<FormattedDate date={entry.pubDate} />
+								</span>
+								<span class="title">{entry.title}</span>
+								{entry.status === 'locked' && (
+									<svg viewBox="0 0 24 24" width="14" height="14" role="img" aria-label="Password-protected">
+										<rect x="5" y="11" width="14" height="9" rx="2" />
+										<path d="M8 11V8a4 4 0 0 1 8 0v3" />
+									</svg>
+								)}
+								{entry.status === 'local' && (
+									<span class="badge">{entry.entry.data.locked ? 'local · locked on site' : 'local only'}</span>
+								)}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.intro {
+		margin: -0.5rem 0 2.5rem;
+	}
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border-top: 1px solid var(--border);
+	}
+	li {
+		margin: 0;
+		border-bottom: 1px solid var(--border);
+	}
+	a {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		padding: 0.95rem 0;
+		text-decoration: none;
+	}
+	a:hover .title {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+	.date {
+		flex-shrink: 0;
+		color: var(--muted);
+		font-size: 0.875rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.title {
+		margin-right: auto;
+	}
+	svg {
+		flex-shrink: 0;
+		fill: none;
+		stroke: var(--muted);
+		stroke-width: 2;
+		stroke-linecap: round;
+	}
+	.badge {
+		flex-shrink: 0;
+		padding: 0.1rem 0.6rem;
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--muted);
+		font-size: 0.75rem;
+	}
+</style>

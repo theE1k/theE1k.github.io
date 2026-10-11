@@ -1,0 +1,102 @@
+---
+// Password form for an encrypted post. The post body only exists as ciphertext in
+// the page; it is decrypted in the browser and never sent anywhere.
+interface Props {
+	salt: string;
+	iv: string;
+	data: string;
+}
+
+const { salt, iv, data } = Astro.props;
+---
+
+<div id="locked" data-salt={salt} data-iv={iv} data-data={data}>
+	<form>
+		<p>This post is password-protected.</p>
+		<div class="row">
+			<input type="password" placeholder="Password" aria-label="Password" autocomplete="off" required />
+			<button class="btn btn-primary" type="submit">Unlock</button>
+		</div>
+		<p class="error" role="alert" hidden>Wrong password.</p>
+	</form>
+</div>
+
+<script>
+	// Keep in sync with scripts/lock.mjs
+	const ITERATIONS = 600_000;
+
+	const root = document.getElementById('locked')!;
+	const form = root.querySelector('form')!;
+	const input = form.querySelector('input')!;
+	const button = form.querySelector('button')!;
+	const error = form.querySelector<HTMLElement>('.error')!;
+	const bytes = (base64: string) => Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		button.disabled = true;
+		error.hidden = true;
+		try {
+			const material = await crypto.subtle.importKey(
+				'raw',
+				new TextEncoder().encode(input.value),
+				'PBKDF2',
+				false,
+				['deriveKey'],
+			);
+			const key = await crypto.subtle.deriveKey(
+				{ name: 'PBKDF2', hash: 'SHA-256', salt: bytes(root.dataset.salt!), iterations: ITERATIONS },
+				material,
+				{ name: 'AES-GCM', length: 256 },
+				false,
+				['decrypt'],
+			);
+			const html = await crypto.subtle.decrypt(
+				{ name: 'AES-GCM', iv: bytes(root.dataset.iv!) },
+				key,
+				bytes(root.dataset.data!),
+			);
+			root.innerHTML = new TextDecoder().decode(html);
+		} catch {
+			error.hidden = false;
+			button.disabled = false;
+			input.select();
+		}
+	});
+</script>
+
+<style>
+	form {
+		padding: 2rem;
+		border-radius: 20px;
+		background: var(--surface);
+	}
+	form p {
+		margin: 0 0 1rem;
+	}
+	.row {
+		display: flex;
+		gap: 0.6rem;
+	}
+	input {
+		flex: 1;
+		min-width: 0;
+		padding: 0.7rem 1.1rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		background: var(--bg);
+		color: var(--heading);
+		font: inherit;
+		outline: none;
+	}
+	input:focus {
+		border-color: var(--muted);
+	}
+	button:disabled {
+		opacity: 0.5;
+	}
+	.error {
+		margin: 1rem 0 0;
+		color: #d1432f;
+	}
+</style>

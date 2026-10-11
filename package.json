@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "lock": "node scripts/lock.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.0.3",
@@ -17,5 +18,10 @@
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.3.8",
     "sharp": "^0.35.0"
+  },
+  "devDependencies": {
+    "marked": "^18.1.0",
+    "shiki": "^4.5.0",
+    "yaml": "^2.9.1"
   }
 }

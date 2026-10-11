@@ -1,9 +1,75 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
+import Blob from '../components/Blob.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import PostList from '../components/PostList.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_TITLE, TOPICS } from '../consts';
+import { getAllPosts, getJournal } from '../posts';
+
+const posts = (await getAllPosts()).map((post) => ({ ...post, url: `/blog/${post.id}/` }));
+const latest = posts[0];
+// Entries that only exist on this machine stay out of the home page
+const journal = (await getJournal()).filter((entry) => entry.status !== 'local');
+
+// Conversations shown in the hero window: an intro, the latest posts, and one per topic
+const threads = [
+	{
+		id: 'hello',
+		name: 'Jisen',
+		shape: 'squircle',
+		color: 'var(--heading)',
+		eyeColor: 'var(--bg)',
+		preview: 'Hey, good to meet you.',
+		ask: 'Who writes this?',
+		answer:
+			"Jisen Lei. A backend engineer moving into AI agent and AI application engineering, finishing an MSc in Data Science at Newcastle University.",
+		posts: [],
+		link: { href: '/about', label: 'More about me' },
+	},
+	{
+		id: 'latest',
+		name: 'Latest posts',
+		shape: 'pill',
+		color: '#2f6fe4',
+		eyeColor: '#fff',
+		preview: latest ? latest.title : 'Nothing yet.',
+		ask: "What's new?",
+		answer: 'Here is the most recent writing.',
+		posts: posts.slice(0, 4),
+		link: { href: '/blog', label: 'All posts' },
+	},
+	...TOPICS.map((topic) => ({
+		id: topic.id,
+		name: topic.name,
+		shape: topic.shape,
+		color: topic.color,
+		eyeColor: '#fff',
+		preview: topic.text,
+		ask: `What do you write about ${topic.name.toLowerCase()}?`,
+		answer: topic.text,
+		posts: posts.filter((post) => post.tags.includes(topic.id)).slice(0, 4),
+		link: undefined,
+	})),
+	{
+		id: 'journal',
+		name: 'Journal',
+		shape: 'squircle',
+		color: '#e4588a',
+		eyeColor: '#fff',
+		preview: 'Personal notes, mostly in Chinese.',
+		ask: 'Anything besides work?',
+		answer: 'A journal: personal notes, mostly in Chinese.',
+		posts: journal.slice(0, 4).map((entry) => ({ ...entry, url: `/journal/${entry.id}/` })),
+		link: { href: '/journal', label: 'Open the journal' },
+	},
+];
+const searchIndex = posts.map((post) => ({
+	title: post.title,
+	url: post.url,
+	text: `${post.title} ${post.description}`.toLowerCase(),
+}));
 ---
 
 <!doctype html>
@@ -13,27 +79,631 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>Hi, I'm Jisen.</h1>
-			<p>
-				I'm a backend engineer moving into AI agent and AI application engineering, currently
-				finishing an MSc in Data Science at Newcastle University. This is where I write about what
-				I'm learning and building. More <a href="/about">about me</a>.
-			</p>
-			<h2 class="mono">Recent posts</h2>
-			<PostList limit={10} />
-			<p class="mono all"><a href="/blog">all posts →</a></p>
+		<main class="wide">
+			<section class="hero">
+				{
+					latest && (
+						<a class="announce" href={`/blog/${latest.id}/`}>
+							<strong>New post</strong>
+							<span>· {latest.title}</span>
+							<span class="arrow">↗</span>
+						</a>
+					)
+				}
+				<h1>
+					Hi, I'm <Blob track class="hero-blob" /> Jisen
+				</h1>
+				<p class="lead">
+					A backend engineer moving into AI agent and AI application engineering. This is where I
+					write about what I'm learning and building.
+				</p>
+				<div class="buttons">
+					<a class="btn btn-primary" href="/blog">Read the blog</a>
+					<a class="btn btn-secondary" href="/about">About me</a>
+				</div>
+
+				<div class="window">
+					<aside>
+						<div class="dots"><i></i><i></i><i></i></div>
+						<div class="threads" role="tablist" aria-label="Topics">
+							{
+								threads.map((thread, i) => (
+									<button
+										type="button"
+										role="tab"
+										aria-selected={i === 0 ? 'true' : 'false'}
+										data-thread={thread.id}
+									>
+										<Blob
+											shape={thread.shape}
+											color={thread.color}
+											eyeColor={thread.eyeColor}
+											width="34"
+											height="34"
+										/>
+										<span>
+											<b>{thread.name}</b>
+											<small>{thread.preview}</small>
+										</span>
+									</button>
+								))
+							}
+						</div>
+					</aside>
+					<div class="chat">
+						{
+							threads.map((thread, i) => (
+								<div class="thread" data-thread={thread.id} hidden={i !== 0}>
+									<div class="chat-head">
+										<Blob
+											shape={thread.shape}
+											color={thread.color}
+											eyeColor={thread.eyeColor}
+											width="22"
+											height="22"
+										/>
+										{thread.name}
+									</div>
+									<div class="messages">
+										<p class="bubble">Hey, good to meet you. What do you want to read about?</p>
+										<p class="bubble me">{thread.ask}</p>
+										<div class="bubble">
+											{thread.answer}
+											{thread.posts.length > 0 && (
+												<ul>
+													{thread.posts.map((post) => (
+														<li>
+															<a href={post.url}>{post.title}</a>
+															<span class="muted">
+																<FormattedDate date={post.pubDate} />
+															</span>
+														</li>
+													))}
+												</ul>
+											)}
+											{thread.posts.length === 0 && !['hello', 'journal'].includes(thread.id) && (
+												<span class="muted"> Nothing published here yet.</span>
+											)}
+										</div>
+										{thread.link && (
+											<a class="btn btn-secondary small" href={thread.link.href}>
+												{thread.link.label}
+											</a>
+										)}
+									</div>
+								</div>
+							))
+						}
+						<form class="ask" role="search" data-posts={JSON.stringify(searchIndex)}>
+							<input
+								type="search"
+								placeholder="Search posts"
+								aria-label="Search posts"
+								autocomplete="off"
+							/>
+							<button type="submit" aria-label="Search">
+								<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+									<path d="M12 19V5M5 12l7-7 7 7"></path>
+								</svg>
+							</button>
+						</form>
+					</div>
+				</div>
+			</section>
+
+			<section class="feature">
+				<div>
+					<h2>Learning in public</h2>
+					<p>
+						I spent about four years building backend systems in Java. Now I'm studying data
+						science and working through agent design, system design, and Python. I write things
+						down as I go.
+					</p>
+					<a class="btn btn-secondary" href="/about">About me</a>
+				</div>
+				<Blob track class="feature-blob" />
+			</section>
+
+			<section>
+				<div class="section-head">
+					<h2>What I write about</h2>
+					<p>Three threads I keep coming back to.</p>
+				</div>
+				<div class="cards">
+					{
+						TOPICS.map((topic) => (
+							<div class="card">
+								<h3>{topic.name}</h3>
+								<p>{topic.text}</p>
+								<div class="art" style={`background-image: ${topic.gradient}`}>
+									<Blob shape={topic.shape} color="#fff" eyeColor="#0a0a0a" width="96" height="96" />
+								</div>
+							</div>
+						))
+					}
+				</div>
+			</section>
+
+			<section class="narrow">
+				<div class="section-head">
+					<h2>Recent posts</h2>
+				</div>
+				<PostList limit={5} />
+			</section>
+
+			<section class="closing">
+				<h2>Start reading</h2>
+				<p>New posts land here and in the RSS feed.</p>
+				<div class="buttons">
+					<a class="btn btn-primary" href={latest ? `/blog/${latest.id}/` : '/blog'}>
+						Read the latest post
+					</a>
+					<a class="btn btn-secondary" href="/rss.xml">RSS feed</a>
+				</div>
+				<Blob outline shape="pebble" class="closing-blob" />
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<script>
+	const tabs = document.querySelectorAll<HTMLButtonElement>('.threads button');
+	const panes = document.querySelectorAll<HTMLElement>('.chat .thread');
+	const form = document.querySelector<HTMLFormElement>('.ask')!;
+	const input = form.querySelector('input')!;
+	const posts: { title: string; url: string; text: string }[] = JSON.parse(form.dataset.posts!);
+
+	tabs.forEach((tab) => {
+		tab.addEventListener('click', () => {
+			tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+			panes.forEach((pane) => (pane.hidden = pane.dataset.thread !== tab.dataset.thread));
+		});
+	});
+
+	// Searching adds the question and the matching posts to the open conversation
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+		const query = input.value.trim();
+		if (!query) return;
+		const messages = [...panes].find((pane) => !pane.hidden)!.querySelector('.messages')!;
+		const words = query.toLowerCase().split(/\s+/);
+		const found = posts.filter((post) => words.every((word) => post.text.includes(word)));
+
+		const question = document.createElement('p');
+		question.className = 'bubble me';
+		question.textContent = query;
+
+		const answer = document.createElement('div');
+		answer.className = 'bubble';
+		if (found.length === 0) {
+			answer.textContent = 'Nothing on that yet.';
+		} else {
+			answer.textContent = found.length === 1 ? 'Found one post.' : `Found ${found.length} posts.`;
+			const list = document.createElement('ul');
+			found.slice(0, 5).forEach((post) => {
+				const link = document.createElement('a');
+				link.href = post.url;
+				link.textContent = post.title;
+				list.appendChild(document.createElement('li')).appendChild(link);
+			});
+			answer.appendChild(list);
+		}
+		messages.append(question, answer);
+		messages.scrollTop = messages.scrollHeight;
+		input.value = '';
+	});
+</script>
+
 <style>
-	h2 {
-		margin: 3rem 0 0.5rem;
-		font-weight: 400;
-		letter-spacing: 0;
+	main.wide {
+		padding-top: 0;
+		padding-bottom: 0;
 	}
-	.all {
-		margin-top: 1.5rem;
+	section {
+		margin-top: 7rem;
+	}
+	h2 {
+		margin: 0 0 0.75rem;
+		font-size: clamp(1.8rem, 4vw, 2.4rem);
+	}
+
+	/* Hero */
+	.hero {
+		margin-top: 0;
+		padding-top: 5.5rem;
+		text-align: center;
+	}
+	.announce {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		text-decoration: none;
+	}
+	.announce .arrow {
+		display: inline-grid;
+		place-items: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		margin-left: 0.35rem;
+		border-radius: 999px;
+		background: var(--surface-2);
+		font-size: 0.75rem;
+	}
+	h1 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25em;
+		margin: 1.25rem 0 1.5rem;
+		font-size: clamp(2.6rem, 8vw, 3.75rem);
+		letter-spacing: -0.01em;
+	}
+	.hero-blob {
+		width: 0.95em;
+		height: 0.95em;
+	}
+	.lead {
+		max-width: 40rem;
+		margin: 0 auto 2rem;
+		color: var(--muted);
+		font-size: 1.15rem;
+		line-height: 1.6;
+	}
+	.buttons {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
+	}
+
+	/* Hero window */
+	.window {
+		display: grid;
+		grid-template-columns: 280px 1fr;
+		max-width: 976px;
+		height: 520px;
+		margin: 4rem auto 0;
+		border: 1px solid var(--border);
+		border-radius: 28px;
+		background: var(--surface);
+		overflow: hidden;
+		text-align: left;
+		font-size: 0.9rem;
+		line-height: 1.45;
+	}
+	aside {
+		padding: 1.1rem 0.9rem;
+		border-right: 1px solid var(--border);
+		overflow-y: auto;
+	}
+	.dots {
+		display: flex;
+		gap: 0.5rem;
+		margin: 0.2rem 0 1.25rem 0.3rem;
+	}
+	.dots i {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: #ee5f57;
+	}
+	.dots i:nth-child(2) {
+		background: #f4bd4f;
+	}
+	.dots i:nth-child(3) {
+		background: #5fc454;
+	}
+	.threads button {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.6rem;
+		border: none;
+		border-radius: 12px;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.threads button:hover,
+	.threads button[aria-selected='true'] {
+		background: var(--surface-2);
+	}
+	.threads button > :global(svg) {
+		flex-shrink: 0;
+	}
+	.threads span {
+		display: grid;
+		min-width: 0;
+	}
+	.threads b {
+		font-weight: 500;
+	}
+	.threads small {
+		overflow: hidden;
+		color: var(--muted);
+		font-size: 0.8rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.chat {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		min-height: 0;
+	}
+	.thread {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+	}
+	.thread[hidden] {
+		display: none;
+	}
+	.chat-head {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.9rem 1.25rem;
+		border-bottom: 1px solid var(--border);
+		font-weight: 500;
+	}
+	.messages {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 1.25rem;
+		overflow-y: auto;
+	}
+	.messages :global(.bubble) {
+		max-width: 80%;
+		margin: 0;
+		padding: 0.7rem 0.95rem;
+		border-radius: 14px;
+		background: var(--surface-2);
+	}
+	.messages :global(.bubble.me) {
+		align-self: flex-end;
+		background: var(--heading);
+		color: var(--bg);
+	}
+	.messages :global(ul) {
+		margin: 0.5rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	.messages :global(li) {
+		display: flex;
+		justify-content: space-between;
+		gap: 1.5rem;
+		margin: 0.25rem 0 0;
+	}
+	.btn.small {
+		padding: 0.4rem 0.9rem;
+		font-size: 0.85rem;
+	}
+	.ask {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0 1.25rem 1.25rem;
+		padding: 0.4rem 0.4rem 0.4rem 1.1rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		background: var(--bg);
+	}
+	.ask:focus-within {
+		border-color: var(--muted);
+	}
+	.ask input {
+		flex: 1;
+		min-width: 0;
+		border: none;
+		outline: none;
+		background: none;
+		color: var(--heading);
+		font: inherit;
+	}
+	.ask input::placeholder {
+		color: var(--muted);
+	}
+	.ask input::-webkit-search-cancel-button {
+		display: none;
+	}
+	.ask button {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border: none;
+		border-radius: 50%;
+		background: var(--heading);
+		color: var(--bg);
+		cursor: pointer;
+	}
+	.ask svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.25;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	/* Feature card with the oversized mascot */
+	.feature {
+		position: relative;
+		display: flex;
+		align-items: center;
+		min-height: 352px;
+		padding: 3rem;
+		border-radius: 28px;
+		background: var(--surface);
+		overflow: hidden;
+	}
+	.feature > div {
+		max-width: 30rem;
+	}
+	.feature p {
+		margin-bottom: 1.75rem;
+		color: var(--muted);
+		font-size: 1.1rem;
+	}
+	.feature-blob {
+		position: absolute;
+		top: -3rem;
+		right: -1rem;
+		width: 460px;
+		height: 460px;
+		filter: drop-shadow(0 24px 48px rgb(0 0 0 / 0.18));
+	}
+
+	/* Topic cards */
+	.section-head {
+		margin-bottom: 2.5rem;
+		text-align: center;
+	}
+	.section-head p {
+		margin: 0;
+		font-size: 1.1rem;
+	}
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.25rem;
+	}
+	.card {
+		display: flex;
+		flex-direction: column;
+		padding: 2rem;
+		border-radius: 28px;
+		background: var(--surface);
+	}
+	.card h3 {
+		margin: 0;
+		font-size: 1.05rem;
+		letter-spacing: -0.01em;
+	}
+	.card p {
+		flex: 1;
+		margin: 0.15rem 0 1.5rem;
+	}
+	.art {
+		position: relative;
+		display: grid;
+		place-items: center;
+		height: 200px;
+		border-radius: 16px;
+		overflow: hidden;
+	}
+	/* Film grain over the gradient */
+	.art::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+		mix-blend-mode: soft-light;
+		opacity: 0.55;
+		pointer-events: none;
+	}
+	.art :global(svg) {
+		position: relative;
+		z-index: 1;
+		filter: drop-shadow(0 10px 20px rgb(0 0 0 / 0.15));
+		transition: transform 0.25s ease-out;
+	}
+	.card:hover .art :global(svg) {
+		transform: translateY(-6px) rotate(-4deg);
+	}
+
+	.narrow {
+		max-width: 760px;
+		margin-inline: auto;
+	}
+
+	/* Closing call to action with the outlined mascot rising behind it */
+	.closing {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		height: 620px;
+		overflow: hidden;
+		text-align: center;
+		color: var(--border);
+	}
+	.closing h2 {
+		margin-bottom: 0.4rem;
+	}
+	.closing p {
+		margin-bottom: 1.5rem;
+		color: var(--heading);
+	}
+	.closing-blob {
+		flex-shrink: 0;
+		width: min(980px, 92vw);
+		height: min(980px, 92vw);
+		margin-top: 4.5rem;
+	}
+
+	@media (max-width: 860px) {
+		section {
+			margin-top: 4.5rem;
+		}
+		.hero {
+			padding-top: 3.5rem;
+		}
+		.window {
+			grid-template-columns: 1fr;
+			height: auto;
+			margin-top: 3rem;
+		}
+		aside {
+			padding: 0.75rem;
+			border-right: none;
+			border-bottom: 1px solid var(--border);
+		}
+		.dots {
+			display: none;
+		}
+		.threads {
+			display: flex;
+			gap: 0.25rem;
+			overflow-x: auto;
+		}
+		.threads button {
+			width: auto;
+			flex-shrink: 0;
+		}
+		.threads small {
+			display: none;
+		}
+		.messages {
+			min-height: 260px;
+		}
+		.feature {
+			align-items: flex-start;
+			min-height: 0;
+			padding: 2rem 2rem 14rem;
+		}
+		.feature-blob {
+			top: auto;
+			right: -2rem;
+			bottom: -9rem;
+			width: 300px;
+			height: 300px;
+		}
+		.cards {
+			grid-template-columns: 1fr;
+		}
+		.closing {
+			height: 420px;
+		}
 	}
 </style>

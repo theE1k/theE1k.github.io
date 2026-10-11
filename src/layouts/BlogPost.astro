@@ -6,20 +6,24 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 
-type Props = Omit<CollectionEntry<'blog'>['data'], 'pubDate'> & { pubDate?: Date };
+type Props = Omit<CollectionEntry<'blog'>['data'], 'pubDate' | 'tags'> & {
+	pubDate?: Date;
+	tags?: string[];
+	lang?: string;
+};
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, lang = 'en' } = Astro.props;
 ---
 
-<html lang="en">
+<html lang={lang}>
 	<head>
 		<BaseHead title={title} description={description} />
 		<style>
 			.title {
-				margin-bottom: 2.5rem;
+				margin-bottom: 3rem;
 			}
 			.title h1 {
-				margin: 0 0 0.5rem;
+				margin: 0 0 1rem;
 			}
 			.hero-image img {
 				display: block;
@@ -36,7 +40,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 					<h1>{title}</h1>
 					{
 						pubDate && (
-							<div class="mono">
+							<div class="muted">
 								<FormattedDate date={pubDate} />
 								{updatedDate && (
 									<span>

@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# plaintext of password-protected posts (only the encrypted copies are committed)
+private/
