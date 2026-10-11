@@ -34,6 +34,19 @@ const { title, description, image = FallbackImage } = Astro.props;
 
 <Font cssVariable="--font-atkinson" preload />
 
+<!-- Set the theme before first paint: saved choice, else system preference -->
+<script is:inline>
+	(() => {
+		const media = matchMedia('(prefers-color-scheme: dark)');
+		const apply = () => {
+			const saved = localStorage.getItem('theme');
+			document.documentElement.dataset.theme = saved || (media.matches ? 'dark' : 'light');
+		};
+		apply();
+		media.addEventListener('change', apply);
+	})();
+</script>
+
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
 

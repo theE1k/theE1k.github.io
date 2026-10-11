@@ -1,0 +1,50 @@
+---
+import { getCollection } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	limit?: number;
+}
+
+const { limit } = Astro.props;
+const posts = (await getCollection('blog'))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, limit);
+---
+
+<ul>
+	{
+		posts.map((post) => (
+			<li>
+				<span class="mono">
+					<FormattedDate date={post.data.pubDate} />
+				</span>
+				<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+			</li>
+		))
+	}
+</ul>
+<style>
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	li {
+		display: flex;
+		align-items: baseline;
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0.45rem 0;
+	}
+	.mono {
+		flex-shrink: 0;
+	}
+	a {
+		color: var(--heading);
+		text-decoration: none;
+	}
+	a:hover {
+		color: var(--accent);
+	}
+</style>
