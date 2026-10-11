@@ -1,7 +1,13 @@
 ---
-import { SITE_TITLE } from '../consts';
+import { SECTIONS, SITE_TITLE, TOPICS } from '../consts';
 import Blob from './Blob.astro';
 import HeaderLink from './HeaderLink.astro';
+
+const menu = [
+	...TOPICS.map((topic) => ({ ...topic, href: `/topics/${topic.id}/` })),
+	...SECTIONS,
+];
+const inTopics = /^\/(topics|blog|reading|journal)(\/|$)/.test(Astro.url.pathname);
 ---
 
 <header>
@@ -10,10 +16,32 @@ import HeaderLink from './HeaderLink.astro';
 		{SITE_TITLE}
 	</a>
 	<nav>
-		<HeaderLink href="/blog">Writing</HeaderLink>
-		<HeaderLink href="/journal">Journal</HeaderLink>
+		<div class="menu">
+			<a href="/topics" class:list={['trigger', { active: inTopics }]} aria-haspopup="true">
+				Topics
+				<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4"></path></svg>
+			</a>
+			<div class="panel">
+				{
+					menu.map((item) => (
+						<a href={item.href}>
+							<Blob
+								shape={item.shape}
+								color={item.color}
+								eyeColor={item.color.startsWith('var') ? 'var(--bg)' : '#fff'}
+								width="30"
+								height="30"
+							/>
+							<span>
+								<strong>{item.name}</strong>
+								<small>{item.text}</small>
+							</span>
+						</a>
+					))
+				}
+			</div>
+		</div>
 		<HeaderLink href="/about">About</HeaderLink>
-		<a href="/rss.xml">RSS</a>
 	</nav>
 	<div class="actions">
 		<button id="theme-toggle" type="button" aria-label="Toggle dark mode">
@@ -48,6 +76,7 @@ import HeaderLink from './HeaderLink.astro';
 </script>
 <style>
 	header {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: 2.5rem;
@@ -83,6 +112,83 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	nav a.active {
 		font-weight: 500;
+	}
+	/* Topics menu: opens on hover and on keyboard or touch focus */
+	.menu {
+		position: relative;
+	}
+	.trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 1.2rem 0;
+	}
+	.trigger svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		transition: transform 0.15s;
+	}
+	.menu:hover .trigger svg,
+	.menu:focus-within .trigger svg {
+		transform: rotate(180deg);
+	}
+	.panel {
+		position: absolute;
+		top: 100%;
+		left: -1rem;
+		z-index: 20;
+		display: grid;
+		grid-template-columns: repeat(2, 260px);
+		gap: 0.25rem;
+		padding: 0.6rem;
+		border: 1px solid var(--border);
+		border-radius: 20px;
+		background: var(--bg);
+		box-shadow: 0 16px 40px rgb(0 0 0 / 0.12);
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-4px);
+		transition:
+			opacity 0.15s,
+			transform 0.15s,
+			visibility 0.15s;
+	}
+	.menu:hover .panel,
+	.menu:focus-within .panel {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+	.panel a {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.6rem 0.75rem;
+		border-radius: 12px;
+		opacity: 1;
+	}
+	.panel a:hover {
+		background: var(--surface);
+	}
+	.panel a > :global(svg) {
+		flex-shrink: 0;
+	}
+	.panel span {
+		display: grid;
+		min-width: 0;
+	}
+	.panel strong {
+		font-weight: 500;
+	}
+	.panel small {
+		overflow: hidden;
+		color: var(--muted);
+		font-size: 0.8rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.actions {
 		display: flex;
@@ -122,6 +228,15 @@ import HeaderLink from './HeaderLink.astro';
 		}
 		nav {
 			gap: 1.1rem;
+		}
+		.menu {
+			position: static;
+		}
+		.panel {
+			left: 1rem;
+			right: 1rem;
+			top: 64px;
+			grid-template-columns: 1fr;
 		}
 		.actions .btn {
 			display: none;

@@ -1,0 +1,25 @@
+---
+import { getCollection, render } from 'astro:content';
+import BlogPost from '../../layouts/BlogPost.astro';
+
+// Only entries with notes get a page of their own
+export async function getStaticPaths() {
+	return (await getCollection('reading'))
+		.filter((entry) => (entry.body ?? '').trim().length > 0)
+		.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<BlogPost
+	lang="zh-CN"
+	title={entry.data.title}
+	description={entry.data.comment ?? `Notes on ${entry.data.title}`}
+	pubDate={entry.data.date}
+>
+	{entry.data.author && <p class="muted">{entry.data.author}</p>}
+	<Content />
+	<p><a href="/reading">Back to reading</a></p>
+</BlogPost>

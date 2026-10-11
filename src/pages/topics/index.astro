@@ -1,0 +1,104 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Blob from '../../components/Blob.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SECTIONS, SITE_TITLE, TOPICS } from '../../consts';
+import { getAllPosts } from '../../posts';
+
+const posts = await getAllPosts();
+const count = (id: string) => posts.filter((post) => post.tags.includes(id)).length;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Topics · ${SITE_TITLE}`} description="Everything on this site, grouped by topic." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Topics</h1>
+			<ul>
+				{
+					TOPICS.map((topic) => (
+						<li>
+							<a href={`/topics/${topic.id}/`}>
+								<Blob shape={topic.shape} color={topic.color} eyeColor="#fff" width="44" height="44" />
+								<span class="text">
+									<strong>{topic.name}</strong>
+									<span class="muted">{topic.text}</span>
+								</span>
+								<span class="muted count">
+									{count(topic.id)} {count(topic.id) === 1 ? 'post' : 'posts'}
+								</span>
+							</a>
+						</li>
+					))
+				}
+				{
+					SECTIONS.map((section) => (
+						<li>
+							<a href={section.href}>
+								<Blob
+									shape={section.shape}
+									color={section.color}
+									eyeColor={section.color.startsWith('var') ? 'var(--bg)' : '#fff'}
+									width="44"
+									height="44"
+								/>
+								<span class="text">
+									<strong>{section.name}</strong>
+									<span class="muted">{section.text}</span>
+								</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	ul {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 0;
+	}
+	li {
+		margin: 0 0 0.6rem;
+	}
+	a {
+		display: flex;
+		align-items: center;
+		gap: 1.1rem;
+		padding: 1.1rem 1.5rem;
+		border-radius: 20px;
+		background: var(--surface);
+		text-decoration: none;
+		transition: background 0.15s;
+	}
+	a:hover {
+		background: var(--surface-2);
+	}
+	a > :global(svg) {
+		flex-shrink: 0;
+	}
+	.text {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		font-size: 0.95rem;
+		line-height: 1.5;
+	}
+	strong {
+		font-size: 1.05rem;
+		font-weight: 500;
+	}
+	.count {
+		flex-shrink: 0;
+		font-size: 0.875rem;
+	}
+</style>

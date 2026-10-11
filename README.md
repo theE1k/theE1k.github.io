@@ -29,6 +29,12 @@ npm run lock -- my-post   # encrypt only private/my-post.md
 
 This asks for a password and writes an encrypted copy to `src/content/locked/`, which is what gets committed. The title, description, date and tags stay readable; the body is decrypted in the reader's browser. Run it again after editing a post.
 
+## Topics and reading
+
+Topics are defined in `src/consts.ts`; a post joins one by listing its id under `tags`, and each topic has a page under `/topics`. A post can carry a `timeline:` list in its frontmatter to show a timeline chart at the top.
+
+The Reading page lists the files in `src/content/reading/` (see `_template.md` there). An entry with body text also gets its own notes page.
+
 ## Journal
 
 Personal entries live under `/journal` and stay out of the home page's recent posts and the RSS feed. Each entry needs only `title` and `pubDate`, and can be:

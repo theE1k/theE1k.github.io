@@ -1,20 +1,27 @@
 ---
-import { getAllPosts } from '../posts';
+import { getAllPosts, getAllWriting } from '../posts';
 import FormattedDate from './FormattedDate.astro';
 
 interface Props {
 	limit?: number;
+	// Only posts filed under this topic id
+	tag?: string;
+	// Include journal entries and reading notes, not only posts
+	everything?: boolean;
 }
 
-const { limit } = Astro.props;
-const posts = (await getAllPosts()).slice(0, limit);
+const { limit, tag, everything = false } = Astro.props;
+const source = everything
+	? await getAllWriting()
+	: (await getAllPosts()).map((post) => ({ ...post, kind: undefined as string | undefined }));
+const posts = source.filter((post) => !tag || post.tags.includes(tag)).slice(0, limit);
 ---
 
 <ul>
 	{
 		posts.map((post) => (
 			<li>
-				<a href={`/blog/${post.id}/`}>
+				<a href={post.url}>
 					<span class="text">
 						<span class="title">
 							{post.title}
@@ -28,7 +35,8 @@ const posts = (await getAllPosts()).slice(0, limit);
 						<span class="description">{post.description}</span>
 					</span>
 					<span class="date">
-						<FormattedDate date={post.pubDate} />
+						{post.kind && <span class="kind">{post.kind}</span>}
+						{post.pubDate && <FormattedDate date={post.pubDate} />}
 					</span>
 				</a>
 			</li>
@@ -80,6 +88,13 @@ const posts = (await getAllPosts()).slice(0, limit);
 		color: var(--muted);
 		font-size: 0.95rem;
 		line-height: 1.5;
+	}
+	.kind {
+		margin-right: 0.75rem;
+		padding: 0.1rem 0.6rem;
+		border-radius: 999px;
+		background: var(--surface-2);
+		font-size: 0.75rem;
 	}
 	.date {
 		flex-shrink: 0;

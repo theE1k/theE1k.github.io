@@ -1,0 +1,61 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Blob from '../../components/Blob.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import PostList from '../../components/PostList.astro';
+import { SITE_TITLE, TOPICS } from '../../consts';
+import { getAllPosts } from '../../posts';
+
+export function getStaticPaths() {
+	return TOPICS.map((topic) => ({ params: { id: topic.id }, props: { topic } }));
+}
+
+const { topic } = Astro.props;
+const empty = !(await getAllPosts()).some((post) => post.tags.includes(topic.id));
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${topic.name} · ${SITE_TITLE}`} description={topic.text} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="head">
+				<Blob track shape={topic.shape} color={topic.color} eyeColor="#fff" width="64" height="64" />
+				<div>
+					<h1>{topic.name}</h1>
+					<p class="muted">{topic.text}</p>
+				</div>
+			</div>
+			<PostList tag={topic.id} />
+			{empty && <p class="muted">Nothing published here yet.</p>}
+			<p class="back"><a href="/topics">All topics</a></p>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		margin-bottom: 2.5rem;
+	}
+	.head > :global(svg) {
+		flex-shrink: 0;
+	}
+	h1 {
+		margin: 0 0 0.25rem;
+	}
+	.head p {
+		margin: 0;
+	}
+	.back {
+		margin-top: 2.5rem;
+		font-size: 0.95rem;
+	}
+</style>

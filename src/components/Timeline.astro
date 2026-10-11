@@ -1,0 +1,159 @@
+---
+// Horizontal timeline: one bar per era on a shared year axis. Eras that are still
+// running are drawn in full ink; finished ones are lighter. Every bar is labelled,
+// so the shade is never the only cue.
+interface Props {
+	items: { label: string; start: number; end?: number; note: string }[];
+}
+
+const { items } = Astro.props;
+const now = new Date().getFullYear();
+const span = now - Math.min(...items.map((item) => item.start));
+const step = span > 220 ? 50 : span > 110 ? 25 : span > 60 ? 20 : 10;
+const min = Math.floor(Math.min(...items.map((item) => item.start)) / step) * step;
+const percent = (year: number) => ((year - min) / (now - min)) * 100;
+const ticks = [];
+for (let year = min; year <= now - step / 2; year += step) ticks.push(year);
+---
+
+<figure class="timeline">
+	<figcaption>主线时间线</figcaption>
+	<ol>
+		{
+			items.map((item) => (
+				<li>
+					<div class="head">
+						<strong>{item.label}</strong>
+						<span class="years">
+							{item.start}–{item.end ?? '至今'}
+						</span>
+					</div>
+					<div class="track">
+						<div
+							class:list={['bar', { open: !item.end }]}
+							style={`left:${percent(item.start)}%;width:${percent(item.end ?? now) - percent(item.start)}%`}
+							title={`${item.label} ${item.start}–${item.end ?? '至今'}`}
+						/>
+					</div>
+					<p>{item.note}</p>
+				</li>
+			))
+		}
+	</ol>
+	<div class="axis" aria-hidden="true">
+		{ticks.map((year) => <span style={`left:${percent(year)}%`}>{year}</span>)}
+		<span class="now" style="left:100%">{now}</span>
+	</div>
+	<div class="legend">
+		<span><i class="bar open" /> 仍在进行</span>
+		<span><i class="bar" /> 已见顶或结束</span>
+	</div>
+</figure>
+
+<style>
+	.timeline {
+		margin: 0 0 3rem;
+		padding: 1.75rem;
+		border-radius: 20px;
+		background: var(--surface);
+	}
+	figcaption {
+		margin-bottom: 1.25rem;
+		color: var(--heading);
+		font-weight: 500;
+	}
+	ol {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	li {
+		margin: 0 0 1.1rem;
+	}
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.95rem;
+	}
+	.head strong {
+		font-weight: 500;
+	}
+	.years {
+		flex-shrink: 0;
+		color: var(--muted);
+		font-size: 0.85rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.track {
+		position: relative;
+		height: 10px;
+		margin: 0.4rem 0 0.35rem;
+		border-radius: 5px;
+		background: var(--surface-2);
+	}
+	.bar {
+		position: absolute;
+		top: 0;
+		height: 100%;
+		border-radius: 5px;
+		background: color-mix(in srgb, var(--heading) 32%, var(--surface));
+	}
+	.bar.open {
+		background: var(--heading);
+	}
+	li p {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.85rem;
+		line-height: 1.5;
+	}
+	.axis {
+		position: relative;
+		height: 1.4rem;
+		margin-top: 0.25rem;
+		border-top: 1px solid var(--border);
+		color: var(--muted);
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.axis span {
+		position: absolute;
+		top: 0.35rem;
+		transform: translateX(-50%);
+	}
+	.axis span:first-child {
+		transform: none;
+	}
+	.axis .now {
+		transform: translateX(-100%);
+		color: var(--heading);
+	}
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.25rem;
+		margin-top: 1rem;
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.legend span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+	.legend .bar {
+		position: static;
+		width: 22px;
+		height: 8px;
+	}
+	@media (max-width: 720px) {
+		.timeline {
+			padding: 1.25rem;
+		}
+		.axis span:not(:first-child):not(.now):nth-child(even) {
+			display: none;
+		}
+	}
+</style>
