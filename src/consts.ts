@@ -31,6 +31,14 @@ export const TOPICS = [
 		gradient: 'linear-gradient(150deg, #f08a4b 0%, #f3b6a3 50%, #b9a7f0 100%)',
 	},
 	{
+		id: 'algorithms',
+		name: 'Algorithms',
+		text: 'Recognising the pattern, not memorising the solution.',
+		shape: 'pebble',
+		color: '#d94f4f',
+		gradient: 'linear-gradient(165deg, #d94f4f 0%, #f0a58f 50%, #f4dca0 100%)',
+	},
+	{
 		id: 'economics',
 		name: 'Economics',
 		text: 'Notes on economics.',

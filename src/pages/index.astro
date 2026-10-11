@@ -588,10 +588,7 @@ const searchIndex = posts.map((post) => ({
 		background: var(--surface);
 		text-decoration: none;
 	}
-	/* Five cards: three on the first row, two wider ones on the second */
-	.card:nth-child(n + 4) {
-		grid-column: span 3;
-	}
+
 	.card h3 {
 		margin: 0;
 		font-size: 1.05rem;
@@ -708,8 +705,7 @@ const searchIndex = posts.map((post) => ({
 		.cards {
 			grid-template-columns: 1fr;
 		}
-		.card,
-		.card:nth-child(n + 4) {
+		.card {
 			grid-column: auto;
 		}
 		.closing {
